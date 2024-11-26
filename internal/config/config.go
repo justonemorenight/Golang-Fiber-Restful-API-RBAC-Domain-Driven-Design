@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -8,24 +9,37 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBPort     string
+	Environment string
+	DBHost      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPort      string
 }
 
 func LoadConfig() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Đọc môi trường từ biến GO_ENV, mặc định là "development"
+	env := os.Getenv("GO_ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	// Load file env tương ứng
+	envFile := fmt.Sprintf(".env.%s", env)
+	if err := godotenv.Load(envFile); err != nil {
+		log.Printf("Warning: %s not found, falling back to .env\n", envFile)
+		// Fallback to default .env
+		if err := godotenv.Load(); err != nil {
+			log.Fatal("Error loading .env file")
+		}
 	}
 
 	return &Config{
-		DBHost:     os.Getenv("DB_HOST"),
-		DBUser:     os.Getenv("DB_USER"),
-		DBPassword: os.Getenv("DB_PASSWORD"),
-		DBName:     os.Getenv("DB_NAME"),
-		DBPort:     os.Getenv("DB_PORT"),
+		Environment: env,
+		DBHost:      os.Getenv("DB_HOST"),
+		DBUser:      os.Getenv("DB_USER"),
+		DBPassword:  os.Getenv("DB_PASSWORD"),
+		DBName:      os.Getenv("DB_NAME"),
+		DBPort:      os.Getenv("DB_PORT"),
 	}
 }

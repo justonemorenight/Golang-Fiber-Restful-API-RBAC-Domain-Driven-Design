@@ -31,9 +31,8 @@ swag init -g cmd/api/main.go
 
 ## Chạy ứng dụng
 ### Môi trường Development
-
 ```bash
-go run ./cmd/api/main.go
+set GO_ENV=development && air
 ```
 
 ### Môi trường Production
