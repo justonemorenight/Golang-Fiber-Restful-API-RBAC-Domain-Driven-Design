@@ -1,6 +1,8 @@
-package errors
+package apperrors
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+)
 
 type AppError struct {
 	Code    int    `json:"code"`
@@ -10,6 +12,14 @@ type AppError struct {
 
 func (e *AppError) Error() string {
 	return e.Message
+}
+
+func (e *AppError) Is(target error) bool {
+	t, ok := target.(*AppError)
+	if !ok {
+		return false
+	}
+	return e.Code == t.Code
 }
 
 func NewAppError(code int, message string, detail string) *AppError {

@@ -38,7 +38,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errors.AppError"
+                            "$ref": "#/definitions/apperrors.AppError"
                         }
                     }
                 }
@@ -62,7 +62,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/handlers.CreateUserRequest"
                         }
                     }
                 ],
@@ -76,7 +76,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.AppError"
+                            "$ref": "#/definitions/apperrors.AppError"
                         }
                     }
                 }
@@ -111,19 +111,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid ID",
                         "schema": {
-                            "$ref": "#/definitions/errors.AppError"
+                            "$ref": "#/definitions/apperrors.AppError"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.AppError"
+                            "$ref": "#/definitions/apperrors.AppError"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.AppError"
+                            "$ref": "#/definitions/apperrors.AppError"
                         }
                     }
                 }
@@ -131,7 +131,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "errors.AppError": {
+        "apperrors.AppError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -142,6 +142,29 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "johndoe"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "secret123"
                 }
             }
         },
