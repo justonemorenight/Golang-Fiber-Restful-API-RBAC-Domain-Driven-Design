@@ -1,17 +1,14 @@
 package main
 
-// @title Fiber API
-// @version 1.0
-// @description API documentation cho ứng dụng Fiber
-// @host localhost:8386
-// @BasePath /api/v1
 import (
 	"backend-fiber/internal/config"
+	sqlcdb "backend-fiber/internal/db"
 	"backend-fiber/internal/handlers"
 	"backend-fiber/internal/middleware"
-	"backend-fiber/internal/models"
 	"backend-fiber/internal/repository"
 	"backend-fiber/internal/services"
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -19,28 +16,55 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
 	// Load config
 	cfg := config.LoadConfig()
 
-	// Connect to database
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
+	// Tạo connection string
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Kết nối database cho goose migrations
+	sqlDB, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatal("Failed to connect to database")
+		log.Fatal("Failed to connect to database for migrations:", err)
+	}
+	defer sqlDB.Close()
+
+	// Kiểm tra version hiện tại của migrations
+	current, err := goose.GetDBVersion(sqlDB)
+	if err != nil {
+		log.Fatal("Failed to get migration version:", err)
 	}
 
-	// Auto migrate models
-	db.AutoMigrate(&models.User{})
+	// Chỉ chạy migrations nếu chưa được áp dụng
+	if current == 0 {
+		if err := goose.SetDialect("postgres"); err != nil {
+			log.Fatal("Failed to set dialect:", err)
+		}
+
+		if err := goose.Up(sqlDB, "db/migrations"); err != nil {
+			log.Fatal("Failed to run migrations:", err)
+		}
+	}
+
+	// Kết nối database với pgxpool cho ứng dụng
+	dbpool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer dbpool.Close()
+
+	// Khởi tạo queries từ sqlc
+	queries := sqlcdb.New(dbpool)
 
 	// Initialize repositories and services
-	userRepo := repository.NewUserRepository(db)
+	userRepo := repository.NewUserRepository(queries)
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 

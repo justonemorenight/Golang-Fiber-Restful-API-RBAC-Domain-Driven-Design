@@ -1,13 +1,14 @@
 package services
 
 import (
+	"backend-fiber/internal/db"
 	apperrors "backend-fiber/internal/errors"
-	"backend-fiber/internal/models"
 	"backend-fiber/internal/repository"
+	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
@@ -18,34 +19,53 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s *UserService) CreateUser(user *models.User) error {
-	if user.Name == "" || user.Email == "" {
-		return apperrors.ErrValidation
+func (s *UserService) CreateUser(ctx context.Context, name, email, password string) (*db.User, error) {
+	if name == "" || email == "" {
+		return nil, apperrors.ErrValidation
 	}
 
-	existingUser, err := s.repo.GetByEmail(user.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return apperrors.ErrDatabaseOperation
-	}
-	if existingUser != nil {
-		return apperrors.NewAppError(
+	// Kiểm tra email đã tồn tại
+	_, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.ErrDatabaseOperation
+		}
+		// Nếu là ErrNoRows thì tiếp tục tạo user mới
+	} else {
+		// Nếu không có lỗi tức là email đã tồn tại
+		return nil, apperrors.NewAppError(
 			fiber.StatusConflict,
 			"Email already exists",
 			"A user with this email address already exists",
 		)
 	}
 
-	return s.repo.Create(user)
-}
-
-func (s *UserService) GetUsers() ([]models.User, error) {
-	return s.repo.GetAll()
-}
-
-func (s *UserService) GetUserByID(id uint) (*models.User, error) {
-	user, err := s.repo.GetByID(id)
-	if err != nil {
-		return nil, apperrors.ErrNotFound
+	// Tạo user mới
+	params := db.CreateUserParams{
+		Name:     name,
+		Email:    email,
+		Password: password, // Trong thực tế nên hash password trước khi lưu
 	}
-	return user, nil
+
+	user, err := s.repo.Create(ctx, params)
+	if err != nil {
+		return nil, apperrors.ErrDatabaseOperation
+	}
+
+	return &user, nil
+}
+
+func (s *UserService) GetUsers(ctx context.Context) ([]db.User, error) {
+	return s.repo.GetAll(ctx)
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, id int32) (*db.User, error) {
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, apperrors.ErrDatabaseOperation
+	}
+	return &user, nil
 }

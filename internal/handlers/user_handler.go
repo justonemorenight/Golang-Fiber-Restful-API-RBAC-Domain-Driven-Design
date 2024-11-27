@@ -2,7 +2,6 @@ package handlers
 
 import (
 	apperrors "backend-fiber/internal/errors"
-	"backend-fiber/internal/models"
 	"backend-fiber/internal/services"
 	"errors"
 	"fmt"
@@ -28,16 +27,6 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min=6" example:"secret123"`
 }
 
-// CreateUser godoc
-// @Summary Tạo user mới
-// @Description Tạo một user mới với thông tin được cung cấp
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body CreateUserRequest true "User Info"
-// @Success 201 {object} models.User
-// @Failure 400 {object} apperrors.AppError
-// @Router /users [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	req := new(CreateUserRequest)
 	if err := c.BodyParser(req); err != nil {
@@ -54,56 +43,37 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Chuyển đổi từ request sang model
-	user := &models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-	}
-
-	if err := h.service.CreateUser(user); err != nil {
-		return err
-	}
-
-	user.Password = ""
-	return c.Status(fiber.StatusCreated).JSON(user)
-}
-
-// GetUsers godoc
-// @Summary Lấy danh sách users
-// @Description Lấy danh sách tất cả users
-// @Tags users
-// @Produce json
-// @Success 200 {array} models.User
-// @Failure 500 {object} apperrors.AppError
-// @Router /users [get]
-func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
-	users, err := h.service.GetUsers()
+	// Gọi service với context và các tham số
+	user, err := h.service.CreateUser(c.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
 		return err
 	}
 
+	// Ẩn password trước khi trả về
+	user.Password = ""
+	return c.Status(fiber.StatusCreated).JSON(user)
+}
+
+func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
+	users, err := h.service.GetUsers(c.Context())
+	if err != nil {
+		return err
+	}
+
+	// Ẩn password của tất cả users
+	for i := range users {
+		users[i].Password = ""
+	}
 	return c.JSON(users)
 }
 
-// GetUserByID godoc
-// @Summary Lấy user bằng ID
-// @Description Lấy thông tin chi tiết của user bằng ID
-// @Tags users
-// @Produce json
-// @Param id path int true "User ID"
-// @Success 200 {object} models.User
-// @Failure 400 {object} apperrors.AppError "Invalid ID"
-// @Failure 404 {object} apperrors.AppError "User not found"
-// @Failure 500 {object} apperrors.AppError "Internal server error"
-// @Router /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ID")
 	}
 
-	user, err := h.service.GetUserByID(uint(id))
+	user, err := h.service.GetUserByID(c.Context(), int32(id))
 	if err != nil {
 		if errors.Is(err, apperrors.ErrNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(apperrors.NewAppError(
