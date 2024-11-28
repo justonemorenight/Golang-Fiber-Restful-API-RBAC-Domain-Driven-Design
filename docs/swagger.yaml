@@ -1,14 +1,4 @@
-basePath: /api/v1
 definitions:
-  apperrors.AppError:
-    properties:
-      code:
-        type: integer
-      detail:
-        type: string
-      message:
-        type: string
-    type: object
   handlers.CreateUserRequest:
     properties:
       email:
@@ -26,7 +16,39 @@ definitions:
     - name
     - password
     type: object
-  models.User:
+  handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        properties:
+          code:
+            type: integer
+          detail:
+            type: string
+          message:
+            type: string
+        type: object
+      success:
+        type: boolean
+    type: object
+  models.LoginResponseSwagger:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/models.UserResponse'
+    type: object
+  models.UserResponse:
     properties:
       created_at:
         type: string
@@ -35,50 +57,50 @@ definitions:
       id:
         type: integer
       name:
-        minLength: 3
-        type: string
-      password:
-        minLength: 6
         type: string
       updated_at:
         type: string
-    required:
-    - email
-    - name
-    - password
     type: object
-host: localhost:8386
 info:
   contact: {}
-  description: API documentation cho ứng dụng Fiber
-  title: Fiber API
-  version: "1.0"
 paths:
-  /users:
-    get:
-      description: Lấy danh sách tất cả users
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.User'
-            type: array
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/models.LoginResponseSwagger'
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/apperrors.AppError'
-      summary: Lấy danh sách users
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: User login
       tags:
-      - users
+      - auth
+  /register:
     post:
       consumes:
       - application/json
-      description: Tạo một user mới với thông tin được cung cấp
+      description: Register a new user in the system
       parameters:
-      - description: User Info
+      - description: User information
         in: body
         name: user
         required: true
@@ -90,17 +112,46 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/models.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/apperrors.AppError'
-      summary: Tạo user mới
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all users from the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
       tags:
       - users
   /users/{id}:
     get:
-      description: Lấy thông tin chi tiết của user bằng ID
+      consumes:
+      - application/json
+      description: Get user information by user ID
       parameters:
       - description: User ID
         in: path
@@ -113,20 +164,18 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/models.UserResponse'
         "400":
-          description: Invalid ID
+          description: Bad Request
           schema:
-            $ref: '#/definitions/apperrors.AppError'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: User not found
+          description: Not Found
           schema:
-            $ref: '#/definitions/apperrors.AppError'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/apperrors.AppError'
-      summary: Lấy user bằng ID
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by ID
       tags:
       - users
 swagger: "2.0"

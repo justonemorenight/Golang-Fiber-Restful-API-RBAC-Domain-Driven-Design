@@ -27,6 +27,17 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min=6" example:"secret123"`
 }
 
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Register a new user in the system
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body CreateUserRequest true "User information"
+// @Success 201 {object} models.UserResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 409 {object} models.ErrorResponse
+// @Router /register [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	req := new(CreateUserRequest)
 	if err := c.BodyParser(req); err != nil {
@@ -54,6 +65,16 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
+// GetUsers godoc
+// @Summary Get all users
+// @Description Retrieve all users from the system
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {array} models.UserResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Router /users [get]
 func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 	users, err := h.service.GetUsers(c.Context())
 	if err != nil {
@@ -67,6 +88,18 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
+// GetUserByID godoc
+// @Summary Get user by ID
+// @Description Get user information by user ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.UserResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {

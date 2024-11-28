@@ -4,27 +4,31 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Environment string
-	DBHost      string
-	DBUser      string
-	DBPassword  string
-	DBName      string
-	DBPort      string
+	Environment      string
+	DBHost           string
+	DBUser           string
+	DBPassword       string
+	DBName           string
+	DBPort           string
+	JWTSecret        string
+	JWTRefreshSecret string
+	AccessTokenExp   time.Duration
+	RefreshTokenExp  time.Duration
 }
 
 func LoadConfig() *Config {
-	// Đọc môi trường từ biến GO_ENV, mặc định là "development"
 	env := os.Getenv("GO_ENV")
 	if env == "" {
 		env = "development"
 	}
 
-	// Load file env tương ứng
+	// Load file env
 	envFile := fmt.Sprintf(".env.%s", env)
 	if err := godotenv.Load(envFile); err != nil {
 		log.Printf("Warning: %s not found, falling back to .env\n", envFile)
@@ -34,12 +38,27 @@ func LoadConfig() *Config {
 		}
 	}
 
+	accessExp, _ := time.ParseDuration(getEnvWithDefault("JWT_ACCESS_EXP", "24h"))
+	refreshExp, _ := time.ParseDuration(getEnvWithDefault("JWT_REFRESH_EXP", "168h"))
+
 	return &Config{
-		Environment: env,
-		DBHost:      os.Getenv("DB_HOST"),
-		DBUser:      os.Getenv("DB_USER"),
-		DBPassword:  os.Getenv("DB_PASSWORD"),
-		DBName:      os.Getenv("DB_NAME"),
-		DBPort:      os.Getenv("DB_PORT"),
+		Environment:      env,
+		DBHost:           os.Getenv("DB_HOST"),
+		DBUser:           os.Getenv("DB_USER"),
+		DBPassword:       os.Getenv("DB_PASSWORD"),
+		DBName:           os.Getenv("DB_NAME"),
+		DBPort:           os.Getenv("DB_PORT"),
+		JWTSecret:        getEnvWithDefault("JWT_SECRET", "your-secret-key"),
+		JWTRefreshSecret: getEnvWithDefault("JWT_REFRESH_SECRET", "your-refresh-secret-key"),
+		AccessTokenExp:   accessExp,
+		RefreshTokenExp:  refreshExp,
 	}
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

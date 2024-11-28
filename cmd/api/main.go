@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend-fiber/internal/auth"
 	"backend-fiber/internal/config"
 	sqlcdb "backend-fiber/internal/db"
 	"backend-fiber/internal/handlers"
@@ -24,6 +25,9 @@ import (
 func main() {
 	// Load config
 	cfg := config.LoadConfig()
+
+	// Khởi tạo JWT config
+	auth.InitJWTConfig(cfg)
 
 	// Tạo connection string
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
@@ -65,7 +69,8 @@ func main() {
 
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(queries)
-	userService := services.NewUserService(userRepo)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(queries)
+	userService := services.NewUserService(userRepo, refreshTokenRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
 	app := fiber.New(fiber.Config{
@@ -76,8 +81,17 @@ func main() {
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(userService)
+
+	// Public routes
+	v1.Post("/register", userHandler.CreateUser)
+	auth := v1.Group("/auth")
+	auth.Post("/login", authHandler.Login)
+
+	// Protected routes
 	users := v1.Group("/users")
-	users.Post("/", userHandler.CreateUser)
+	users.Use(middleware.Protected())
 	users.Get("/", userHandler.GetUsers)
 	users.Get("/:id", userHandler.GetUserByID)
 
