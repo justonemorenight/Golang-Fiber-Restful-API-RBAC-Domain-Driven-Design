@@ -38,8 +38,8 @@ func LoadConfig() *Config {
 		}
 	}
 
-	accessExp, _ := time.ParseDuration(getEnvWithDefault("JWT_ACCESS_EXP", "24h"))
-	refreshExp, _ := time.ParseDuration(getEnvWithDefault("JWT_REFRESH_EXP", "168h"))
+	accessExp, _ := time.ParseDuration(getEnvWithDefault("JWT_ACCESS_EXP", "15m"))
+	refreshExp, _ := time.ParseDuration(getEnvWithDefault("JWT_REFRESH_EXP", "7d"))
 
 	return &Config{
 		Environment:      env,

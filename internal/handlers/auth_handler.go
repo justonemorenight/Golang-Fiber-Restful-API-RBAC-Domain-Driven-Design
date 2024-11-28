@@ -50,7 +50,10 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, accessToken, refreshToken, err := h.userService.Login(c.Context(), req.Email, req.Password)
+	ip := c.IP()
+	userAgent := c.Get("User-Agent")
+
+	user, accessToken, refreshToken, err := h.userService.Login(c.Context(), req.Email, req.Password, ip, userAgent)
 	if err != nil {
 		return err
 	}

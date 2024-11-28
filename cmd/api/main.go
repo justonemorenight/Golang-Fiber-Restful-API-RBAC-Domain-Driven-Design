@@ -52,7 +52,7 @@ func main() {
 			log.Fatal("Failed to set dialect:", err)
 		}
 
-		if err := goose.Up(sqlDB, "db/migrations"); err != nil {
+		if err := goose.Up(sqlDB, "sqlc/migrations"); err != nil {
 			log.Fatal("Failed to run migrations:", err)
 		}
 	}
@@ -69,7 +69,7 @@ func main() {
 
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(queries)
-	refreshTokenRepo := repository.NewRefreshTokenRepository(queries)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(queries, dbpool)
 	userService := services.NewUserService(userRepo, refreshTokenRepo)
 	userHandler := handlers.NewUserHandler(userService)
 

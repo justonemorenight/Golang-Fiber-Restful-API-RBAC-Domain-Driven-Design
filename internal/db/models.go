@@ -9,11 +9,15 @@ import (
 )
 
 type RefreshToken struct {
-	ID        int32            `json:"id"`
-	UserID    int32            `json:"user_id"`
-	Token     string           `json:"token"`
-	ExpiresAt pgtype.Timestamp `json:"expires_at"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	ID            int32            `json:"id"`
+	UserID        int32            `json:"user_id"`
+	Token         string           `json:"token"`
+	ExpiresAt     pgtype.Timestamp `json:"expires_at"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	LastUsedAt    pgtype.Timestamp `json:"last_used_at"`
+	UsageCount    int32            `json:"usage_count"`
+	LastUsedIP    string           `json:"last_used_ip"`
+	LastUserAgent string           `json:"last_user_agent"`
 }
 
 type User struct {

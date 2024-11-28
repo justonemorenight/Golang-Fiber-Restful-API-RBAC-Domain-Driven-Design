@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"backend-fiber/internal/auth"
@@ -85,7 +86,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id int32) (*db.User, erro
 	return &user, nil
 }
 
-func (s *UserService) Login(ctx context.Context, email, password string) (*db.User, string, string, error) {
+func (s *UserService) Login(ctx context.Context, email, password string, ip string, userAgent string) (*db.User, string, string, error) {
 	// Tìm user theo email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
@@ -140,4 +141,41 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*db.Us
 	user.Password = ""
 
 	return &user, accessToken, refreshToken, nil
+}
+
+func (s *UserService) ValidateRefreshToken(ctx context.Context, token string, ip string, userAgent string) error {
+	// Lấy token từ database
+	refreshToken, err := s.refreshTokenRepo.Get(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Lấy thông tin usage
+	usage, err := s.refreshTokenRepo.GetTokenUsage(ctx, refreshToken.ID)
+	if err != nil {
+		return err
+	}
+
+	// Kiểm tra các dấu hiệu bất thường
+	if usage.UsageCount > 100 { // Quá nhiều lần refresh
+		s.refreshTokenRepo.Delete(ctx, token)
+		return errors.New("suspicious activity: high refresh count")
+	}
+
+	if time.Since(usage.LastUsedAt) < 1*time.Minute { // Refresh quá nhanh
+		return errors.New("suspicious activity: too frequent refresh")
+	}
+
+	if usage.LastUsedIP != ip { // IP thay đổi
+		log.Printf("Warning: Token used from different IP. Previous: %s, Current: %s",
+			usage.LastUsedIP, ip)
+	}
+
+	// Update usage info
+	err = s.refreshTokenRepo.UpdateTokenUsage(ctx, refreshToken.ID, ip, userAgent)
+	if err != nil {
+		log.Printf("Failed to update token usage: %v", err)
+	}
+
+	return nil
 }
