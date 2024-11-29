@@ -2,9 +2,9 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  # Sử dụng .exe trực tiếp cho Windows
+  # Use .exe directly for Windows
   cmd = "go build -o ./tmp/main.exe ./cmd/api/main.go"
-  # Sử dụng điều kiện OS để xác định bin
+  # Use OS condition to determine bin
   bin = "./tmp/main.exe"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor"]

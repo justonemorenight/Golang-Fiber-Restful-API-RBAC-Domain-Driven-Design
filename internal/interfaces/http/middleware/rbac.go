@@ -28,7 +28,7 @@ func (m *RBACMiddleware) RequirePermission(permission string) fiber.Handler {
 
 			if int32(paramID) != userID {
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-					"error": "Không có quyền xem thông tin của user khác",
+					"error": "No permission to view other user's information",
 				})
 			}
 		}
@@ -40,7 +40,7 @@ func (m *RBACMiddleware) RequirePermission(permission string) fiber.Handler {
 
 		if !hasPermission {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "Không có quyền truy cập",
+				"error": "Access denied",
 			})
 		}
 

@@ -36,15 +36,15 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password string) 
 		return nil, apperrors.ErrValidation
 	}
 
-	// Kiểm tra email đã tồn tại
+	// Check if email already exists
 	_, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.ErrDatabaseOperation
 		}
-		// Nếu là ErrNoRows thì tiếp tục tạo user mới
+		// If it's ErrNoRows, continue to create a new user
 	} else {
-		// Nếu không có lỗi tức là email đã tồn tại
+		// If there's no error, the email already exists
 		return nil, apperrors.NewAppError(
 			fiber.StatusConflict,
 			"Email already exists",
@@ -58,7 +58,7 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password string) 
 		return nil, apperrors.ErrInternalServer
 	}
 
-	// Tạo user mới
+	// Create a new user
 	params := db.CreateUserParams{
 		Name:     name,
 		Email:    email,
@@ -70,13 +70,13 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password string) 
 		return nil, apperrors.ErrDatabaseOperation
 	}
 
-	// Lấy member role ID
+	// Get member role ID
 	memberRole, err := s.queries.GetRoleByName(ctx, "member")
 	if err != nil {
 		return nil, apperrors.ErrDatabaseOperation
 	}
 
-	// Gán role member cho user mới
+	// Assign member role to the new user
 	err = s.queries.AssignRoleToUser(ctx, db.AssignRoleToUserParams{
 		UserID: user.ID,
 		RoleID: memberRole.ID,
@@ -105,7 +105,7 @@ func (s *Service) GetUserByID(ctx context.Context, id int32) (*db.User, error) {
 }
 
 func (s *Service) Login(ctx context.Context, email, password string, ip string, userAgent string) (*db.User, string, string, error) {
-	// Tìm user theo email
+	// Find user by email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, "", "", apperrors.NewAppError(
@@ -115,7 +115,7 @@ func (s *Service) Login(ctx context.Context, email, password string, ip string, 
 		)
 	}
 
-	// Kiểm tra password
+	// Check password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, "", "", apperrors.NewAppError(
 			fiber.StatusUnauthorized,
@@ -124,7 +124,7 @@ func (s *Service) Login(ctx context.Context, email, password string, ip string, 
 		)
 	}
 
-	// Tạo access token
+	// Create access token
 	accessToken, err := auth.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		return nil, "", "", apperrors.NewAppError(
@@ -134,7 +134,7 @@ func (s *Service) Login(ctx context.Context, email, password string, ip string, 
 		)
 	}
 
-	// Tạo refresh token
+	// Create refresh token
 	refreshToken, err := auth.GenerateRefreshToken(user.ID, user.Email)
 	if err != nil {
 		return nil, "", "", apperrors.NewAppError(
@@ -144,7 +144,7 @@ func (s *Service) Login(ctx context.Context, email, password string, ip string, 
 		)
 	}
 
-	// Lưu refresh token vào database
+	// Save refresh token to database
 	err = s.refreshTokenRepo.Create(ctx, user.ID, refreshToken,
 		time.Now().Add(auth.GetJWTConfig().RefreshExp))
 	if err != nil {
@@ -155,36 +155,36 @@ func (s *Service) Login(ctx context.Context, email, password string, ip string, 
 		)
 	}
 
-	// Xóa password trước khi trả về
+	// Remove password before returning
 	user.Password = ""
 
 	return &user, accessToken, refreshToken, nil
 }
 
 func (s *Service) ValidateRefreshToken(ctx context.Context, token string, ip string, userAgent string) error {
-	// Lấy token từ database
+	// Get token from database
 	refreshToken, err := s.refreshTokenRepo.Get(ctx, token)
 	if err != nil {
 		return err
 	}
 
-	// Lấy thông tin usage
+	// Get token usage info
 	usage, err := s.refreshTokenRepo.GetTokenUsage(ctx, refreshToken.ID)
 	if err != nil {
 		return err
 	}
 
-	// Kiểm tra các dấu hiệu bất thường
-	if usage.UsageCount > 100 { // Quá nhiều lần refresh
+	// Check for suspicious activity
+	if usage.UsageCount > 100 { // Too many refreshes
 		s.refreshTokenRepo.Delete(ctx, token)
 		return errors.New("suspicious activity: high refresh count")
 	}
 
-	if time.Since(usage.LastUsedAt) < 1*time.Minute { // Refresh quá nhanh
+	if time.Since(usage.LastUsedAt) < 1*time.Minute { // Too frequent refresh
 		return errors.New("suspicious activity: too frequent refresh")
 	}
 
-	if usage.LastUsedIP != ip { // IP thay đổi
+	if usage.LastUsedIP != ip { // IP changed
 		log.Printf("Warning: Token used from different IP. Previous: %s, Current: %s",
 			usage.LastUsedIP, ip)
 	}
@@ -207,7 +207,7 @@ func (s *Service) GetProfile(ctx context.Context, userID int32) (*db.User, error
 		return nil, apperrors.ErrDatabaseOperation
 	}
 
-	// Xóa password trước khi trả về
+	// Remove password before returning
 	user.Password = ""
 	return &user, nil
 }

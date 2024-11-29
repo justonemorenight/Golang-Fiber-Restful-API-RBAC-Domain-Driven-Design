@@ -14,7 +14,7 @@ type CreateUserRequest struct {
 }
 
 type UserHandler struct {
-	// TODO: thêm các dependencies cần thiết
+	// TODO: add necessary dependencies
 }
 
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {

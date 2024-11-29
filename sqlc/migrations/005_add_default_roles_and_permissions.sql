@@ -1,25 +1,25 @@
 -- +goose Up
--- Tạo roles mặc định
+-- Create default roles
 INSERT INTO roles (name, description) VALUES
-('admin', 'Quản trị viên với toàn quyền'),
-('member', 'Thành viên thông thường');
+('admin', 'Administrator with full access'),
+('member', 'Regular member');
 
--- Tạo permissions
+-- Create permissions
 INSERT INTO permissions (name, description, resource, action) VALUES
-('users.create', 'Tạo user mới', 'users', 'create'),
-('users.read', 'Xem thông tin user', 'users', 'read'),
-('users.update', 'Cập nhật user', 'users', 'update'),
-('users.delete', 'Xóa user', 'users', 'delete'),
-('users.list', 'Xem danh sách users', 'users', 'list'),
-('users.read_self', 'Xem thông tin cá nhân', 'users', 'read_self');
+('users.create', 'Create new user', 'users', 'create'),
+('users.read', 'View user information', 'users', 'read'),
+('users.update', 'Update user', 'users', 'update'),
+('users.delete', 'Delete user', 'users', 'delete'),
+('users.list', 'View user list', 'users', 'list'),
+('users.read_self', 'View personal information', 'users', 'read_self');
 
--- Gán permissions cho admin role
+-- Assign permissions to admin role
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id 
 FROM roles r, permissions p
 WHERE r.name = 'admin';
 
--- Gán permission read_self cho member role
+-- Assign read_self permission to member role
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r, permissions p

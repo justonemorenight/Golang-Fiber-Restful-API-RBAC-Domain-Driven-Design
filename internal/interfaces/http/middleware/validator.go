@@ -5,13 +5,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var validate = validator.New() // Thêm khai báo validator
+var validate = validator.New()
 
 func ValidateRequest(model interface{}) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if err := c.BodyParser(model); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Dữ liệu không hợp lệ",
+				"error": "Invalid data",
 			})
 		}
 

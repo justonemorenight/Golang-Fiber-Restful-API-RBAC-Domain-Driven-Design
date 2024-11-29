@@ -13,7 +13,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		return c.Status(appErr.Code).JSON(appErr)
 	}
 
-	// Mặc định là internal server error
+	// Default is internal server error
 	code := fiber.StatusInternalServerError
 	message := "Internal Server Error"
 	detail := ""
@@ -32,7 +32,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		message = e.Message
 	}
 
-	// Log error ở đây nếu cần
+	// Log error if needed
 	// logger.Error(err)
 
 	// Return error response

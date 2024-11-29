@@ -21,7 +21,7 @@ func NewUserHandler(service *user.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-// Thêm struct mới cho request
+// Add new struct for request
 type CreateUserRequest struct {
 	Name     string `json:"name" validate:"required" example:"johndoe"`
 	Email    string `json:"email" validate:"required,email" example:"john@example.com"`

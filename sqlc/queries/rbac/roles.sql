@@ -15,8 +15,5 @@ UPDATE roles SET name = $2, description = $3 WHERE id = $1;
 -- name: DeleteRole :exec
 DELETE FROM roles WHERE id = $1;
 
--- Xóa các query trùng lặp:
--- GetUserRoles và AssignRoleToUser đã được định nghĩa trong permissions.sql 
-
 -- name: GetRoleByName :one
 SELECT * FROM roles WHERE name = $1;

@@ -37,21 +37,21 @@ func main() {
 	// Load config
 	cfg := config.LoadConfig()
 
-	// Khởi tạo JWT config
+	// Initialize JWT config
 	auth.InitJWTConfig(cfg)
 
-	// Tạo connection string
+	// Create connection string
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
 
-	// Kết nối database cho goose migrations
+	// Connect to database for migrations
 	sqlDB, err := sql.Open("pgx", dsn)
 	if err != nil {
 		log.Fatal("Failed to connect to database for migrations:", err)
 	}
 	defer sqlDB.Close()
 
-	// Luôn chạy migration để cập nhật schema mới nhất
+	// Always run migrations to update the latest schema
 	if err := goose.SetDialect("postgres"); err != nil {
 		log.Fatal("Failed to set dialect:", err)
 	}
@@ -60,21 +60,21 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	// Log migration version hiện tại
+	// Log current migration version
 	current, err := goose.GetDBVersion(sqlDB)
 	if err != nil {
 		log.Fatal("Failed to get current migration version:", err)
 	}
 	log.Printf("Current migration version: %d", current)
 
-	// Kết nối database với pgxpool cho ứng dụng
+	// Connect to database with pgxpool for the application
 	dbpool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	defer dbpool.Close()
 
-	// Khởi tạo queries từ sqlc
+	// Initialize queries from sqlc
 	queries := sqlcdb.New(dbpool)
 
 	// Initialize repositories and services
@@ -99,7 +99,7 @@ func main() {
 	auth := v1.Group("/auth")
 	auth.Post("/login", authHandler.Login)
 
-	// Khởi tạo RBAC service
+	// Initialize RBAC service
 	rbacService := rbac.NewService(queries)
 	rbacMiddleware := middleware.NewRBACMiddleware(rbacService)
 
@@ -107,17 +107,17 @@ func main() {
 	users := v1.Group("/users")
 	users.Use(middleware.Protected())
 
-	// Routes cho admin
+	// Routes for admin
 	users.Get("/", rbacMiddleware.RequirePermission("users.list"), userHandler.GetUsers)
 	users.Post("/", rbacMiddleware.RequirePermission("users.create"), userHandler.CreateUser)
 
-	// Route cho cả admin và member
+	// Route for both admin and member
 	users.Get("/:id", rbacMiddleware.RequirePermission("users.read_self"), userHandler.GetUserByID)
 
-	// Thêm route cho swagger
+	// Add route for swagger
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
-	// Thêm route mới vào group users đã được bảo vệ bởi middleware auth
+	// Add new route to group users protected by middleware auth
 	users.Get("/profile", rbacMiddleware.RequirePermission("users.read_self"), userHandler.GetProfile)
 
 	log.Fatal(app.Listen(":8386"))

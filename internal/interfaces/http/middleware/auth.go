@@ -28,9 +28,9 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// Verify token với secret key từ config
+		// Verify token with secret key from config
 		token, err := jwt.ParseWithClaims(parts[1], &auth.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			// Thêm log để debug
+			// Add log for debugging
 			log.Printf("Using secret key: %s", cfg.JWTSecret)
 			return []byte(cfg.JWTSecret), nil
 		})

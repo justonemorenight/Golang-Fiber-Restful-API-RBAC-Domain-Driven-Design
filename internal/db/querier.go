@@ -21,8 +21,6 @@ type Querier interface {
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
 	GetRole(ctx context.Context, id int32) (Role, error)
-	// Xóa các query trùng lặp:
-	// GetUserRoles và AssignRoleToUser đã được định nghĩa trong permissions.sql
 	GetRoleByName(ctx context.Context, name string) (Role, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)

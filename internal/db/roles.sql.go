@@ -54,8 +54,6 @@ const getRoleByName = `-- name: GetRoleByName :one
 SELECT id, name, description FROM roles WHERE name = $1
 `
 
-// Xóa các query trùng lặp:
-// GetUserRoles và AssignRoleToUser đã được định nghĩa trong permissions.sql
 func (q *Queries) GetRoleByName(ctx context.Context, name string) (Role, error) {
 	row := q.db.QueryRow(ctx, getRoleByName, name)
 	var i Role

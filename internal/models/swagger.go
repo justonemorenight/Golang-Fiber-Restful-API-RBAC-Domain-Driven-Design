@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// UserResponse là struct dùng cho Swagger documentation
+// UserResponse is used for Swagger documentation
 type UserResponse struct {
 	ID        int32     `json:"id"`
 	Name      string    `json:"name"`
@@ -11,14 +11,14 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// LoginResponseSwagger là struct dùng cho Swagger documentation
+// LoginResponseSwagger is used for Swagger documentation
 type LoginResponseSwagger struct {
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
 	User         UserResponse `json:"user"`
 }
 
-// ErrorResponse là struct dùng cho Swagger documentation
+// ErrorResponse is used for Swagger documentation
 type ErrorResponse struct {
 	Success bool `json:"success"`
 	Error   struct {
@@ -28,12 +28,12 @@ type ErrorResponse struct {
 	} `json:"error"`
 }
 
-// RefreshTokenRequest là struct dùng cho Swagger documentation
+// RefreshTokenRequest is used for Swagger documentation
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
-// RefreshTokenResponse là struct dùng cho Swagger documentation
+// RefreshTokenResponse is used for Swagger documentation
 type RefreshTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
