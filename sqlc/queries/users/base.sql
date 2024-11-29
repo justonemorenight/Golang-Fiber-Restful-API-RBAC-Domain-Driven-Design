@@ -1,4 +1,4 @@
--- name: CreateUser :one
+-- name: CreateNewUser :one
 INSERT INTO users (
     name,
     email,
@@ -8,10 +8,10 @@ INSERT INTO users (
 )
 RETURNING *;
 
--- name: GetUser :one
+-- name: GetUserByID :one
 SELECT * FROM users
 WHERE id = $1 LIMIT 1;
 
--- name: ListUsers :many
+-- name: GetAllUsers :many
 SELECT * FROM users
 ORDER BY id; 

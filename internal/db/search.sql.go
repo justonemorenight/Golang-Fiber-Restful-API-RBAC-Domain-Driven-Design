@@ -9,6 +9,25 @@ import (
 	"context"
 )
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, name, email, password, created_at, updated_at FROM users
+WHERE email = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const searchUsers = `-- name: SearchUsers :many
 SELECT id, name, email, password, created_at, updated_at
 FROM users
@@ -25,8 +44,8 @@ LIMIT $2 OFFSET $3
 
 type SearchUsersParams struct {
 	Column1 string `json:"column_1"`
-	Limit   int32  `json:"limit"`
-	Offset  int32  `json:"offset"`
+	Limit   int64  `json:"limit"`
+	Offset  int64  `json:"offset"`
 }
 
 func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error) {

@@ -9,15 +9,28 @@ import (
 )
 
 type Querier interface {
+	AssignPermissionToRole(ctx context.Context, arg AssignPermissionToRoleParams) error
+	AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error
+	CreateNewUser(ctx context.Context, arg CreateNewUserParams) (User, error)
+	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
+	DeleteRole(ctx context.Context, id int32) error
 	DeleteUserRefreshTokens(ctx context.Context, userID int32) error
+	GetAllUsers(ctx context.Context) ([]User, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
-	GetUser(ctx context.Context, id int32) (User, error)
+	GetRole(ctx context.Context, id int32) (Role, error)
+	// Xóa các query trùng lặp:
+	// GetUserRoles và AssignRoleToUser đã được định nghĩa trong permissions.sql
+	GetRoleByName(ctx context.Context, name string) (Role, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
-	ListUsers(ctx context.Context) ([]User, error)
+	GetUserByID(ctx context.Context, id int32) (User, error)
+	GetUserPermissions(ctx context.Context, userID int32) ([]Permission, error)
+	GetUserRoles(ctx context.Context, userID int32) ([]Role, error)
+	ListRoles(ctx context.Context) ([]Role, error)
 	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error)
+	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 }
 
 var _ Querier = (*Queries)(nil)

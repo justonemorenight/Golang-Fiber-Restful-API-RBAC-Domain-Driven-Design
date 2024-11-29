@@ -11,23 +11,54 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createNewUser = `-- name: CreateNewUser :one
+INSERT INTO users (
+    name,
+    email,
+    password
+) VALUES (
+    $1, $2, $3
+)
+RETURNING id, name, email, password, created_at, updated_at
+`
+
+type CreateNewUserParams struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createNewUser, arg.Name, arg.Email, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createRefreshToken = `-- name: CreateRefreshToken :one
 INSERT INTO refresh_tokens (
     user_id,
     token,
     expires_at
-) VALUES ($1, $2, $3)
-RETURNING id, user_id, token, expires_at, created_at
+) VALUES ($1, $2, $3::timestamptz)
+RETURNING id, user_id, token, expires_at, created_at, last_used_at, usage_count, last_used_ip, last_user_agent
 `
 
 type CreateRefreshTokenParams struct {
-	UserID    int32            `json:"user_id"`
-	Token     string           `json:"token"`
-	ExpiresAt pgtype.Timestamp `json:"expires_at"`
+	UserID  int32              `json:"user_id"`
+	Token   string             `json:"token"`
+	Column3 pgtype.Timestamptz `json:"column_3"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
-	row := q.db.QueryRow(ctx, createRefreshToken, arg.UserID, arg.Token, arg.ExpiresAt)
+	row := q.db.QueryRow(ctx, createRefreshToken, arg.UserID, arg.Token, arg.Column3)
 	var i RefreshToken
 	err := row.Scan(
 		&i.ID,
@@ -35,6 +66,10 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 		&i.Token,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.LastUsedAt,
+		&i.UsageCount,
+		&i.LastUsedIp,
+		&i.LastUserAgent,
 	)
 	return i, err
 }
@@ -59,8 +94,40 @@ func (q *Queries) DeleteUserRefreshTokens(ctx context.Context, userID int32) err
 	return err
 }
 
+const getAllUsers = `-- name: GetAllUsers :many
+SELECT id, name, email, password, created_at, updated_at FROM users
+ORDER BY id
+`
+
+func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, getAllUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRefreshToken = `-- name: GetRefreshToken :one
-SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens
+SELECT id, user_id, token, expires_at, created_at, last_used_at, usage_count, last_used_ip, last_user_agent FROM refresh_tokens
 WHERE token = $1 AND expires_at > NOW()
 LIMIT 1
 `
@@ -74,6 +141,29 @@ func (q *Queries) GetRefreshToken(ctx context.Context, token string) (RefreshTok
 		&i.Token,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.LastUsedAt,
+		&i.UsageCount,
+		&i.LastUsedIp,
+		&i.LastUserAgent,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, name, email, password, created_at, updated_at FROM users
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

@@ -34,8 +34,8 @@ type LoginResponse struct {
 // @Produce json
 // @Param credentials body LoginRequest true "Login credentials"
 // @Success 200 {object} models.LoginResponseSwagger
-// @Failure 400 {object} fiber.Map
-// @Failure 401 {object} fiber.Map
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	req := new(LoginRequest)

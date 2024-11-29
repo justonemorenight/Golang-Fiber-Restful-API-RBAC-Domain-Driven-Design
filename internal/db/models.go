@@ -8,16 +8,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Permission struct {
+	ID          int32       `json:"id"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	Resource    string      `json:"resource"`
+	Action      string      `json:"action"`
+}
+
 type RefreshToken struct {
-	ID            int32            `json:"id"`
-	UserID        int32            `json:"user_id"`
-	Token         string           `json:"token"`
-	ExpiresAt     pgtype.Timestamp `json:"expires_at"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
-	LastUsedAt    pgtype.Timestamp `json:"last_used_at"`
-	UsageCount    int32            `json:"usage_count"`
-	LastUsedIP    string           `json:"last_used_ip"`
-	LastUserAgent string           `json:"last_user_agent"`
+	ID            int32              `json:"id"`
+	UserID        int32              `json:"user_id"`
+	Token         string             `json:"token"`
+	ExpiresAt     pgtype.Timestamptz `json:"expires_at"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	LastUsedAt    pgtype.Timestamptz `json:"last_used_at"`
+	UsageCount    pgtype.Int4        `json:"usage_count"`
+	LastUsedIp    pgtype.Text        `json:"last_used_ip"`
+	LastUserAgent pgtype.Text        `json:"last_user_agent"`
+}
+
+type Role struct {
+	ID          int32       `json:"id"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+}
+
+type RolePermission struct {
+	RoleID       int32 `json:"role_id"`
+	PermissionID int32 `json:"permission_id"`
 }
 
 type User struct {
@@ -27,4 +46,9 @@ type User struct {
 	Password  string             `json:"password"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type UserRole struct {
+	UserID int32 `json:"user_id"`
+	RoleID int32 `json:"role_id"`
 }

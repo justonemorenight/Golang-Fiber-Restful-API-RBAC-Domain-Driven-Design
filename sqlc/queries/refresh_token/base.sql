@@ -3,7 +3,7 @@ INSERT INTO refresh_tokens (
     user_id,
     token,
     expires_at
-) VALUES ($1, $2, $3)
+) VALUES ($1, $2, $3::timestamptz)
 RETURNING *;
 
 -- name: GetRefreshToken :one

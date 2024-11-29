@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"backend-fiber/internal/auth"
+	"backend-fiber/internal/pkg/config"
+	"log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +11,8 @@ import (
 )
 
 func Protected() fiber.Handler {
+	cfg := config.GetConfig()
+
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -17,7 +21,6 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// Kiểm tra Bearer token
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -25,18 +28,27 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// Verify token
+		// Verify token với secret key từ config
 		token, err := jwt.ParseWithClaims(parts[1], &auth.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return []byte("your-secret-key"), nil
+			// Thêm log để debug
+			log.Printf("Using secret key: %s", cfg.JWTSecret)
+			return []byte(cfg.JWTSecret), nil
 		})
 
-		if err != nil || !token.Valid {
+		if err != nil {
+			log.Printf("Token validation error: %v", err)
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Invalid token",
+				"error":   err.Error(),
 			})
 		}
 
-		// Lưu thông tin user vào context
+		if !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": "Token is not valid",
+			})
+		}
+
 		claims := token.Claims.(*auth.JWTClaims)
 		c.Locals("user_id", claims.UserID)
 		c.Locals("email", claims.Email)

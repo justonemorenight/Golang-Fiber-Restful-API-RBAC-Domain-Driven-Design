@@ -20,12 +20,14 @@ import (
 type Service struct {
 	userRepo         user.UserRepository
 	refreshTokenRepo *postgres.RefreshTokenRepository
+	queries          *db.Queries
 }
 
-func NewService(userRepo user.UserRepository, refreshTokenRepo *postgres.RefreshTokenRepository) *Service {
+func NewService(userRepo user.UserRepository, refreshTokenRepo *postgres.RefreshTokenRepository, queries *db.Queries) *Service {
 	return &Service{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
+		queries:          queries,
 	}
 }
 
@@ -68,7 +70,22 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password string) 
 		return nil, apperrors.ErrDatabaseOperation
 	}
 
-	user.Password = "" // Xóa password trước khi trả về
+	// Lấy member role ID
+	memberRole, err := s.queries.GetRoleByName(ctx, "member")
+	if err != nil {
+		return nil, apperrors.ErrDatabaseOperation
+	}
+
+	// Gán role member cho user mới
+	err = s.queries.AssignRoleToUser(ctx, db.AssignRoleToUserParams{
+		UserID: user.ID,
+		RoleID: memberRole.ID,
+	})
+	if err != nil {
+		return nil, apperrors.ErrDatabaseOperation
+	}
+
+	user.Password = ""
 	return &user, nil
 }
 

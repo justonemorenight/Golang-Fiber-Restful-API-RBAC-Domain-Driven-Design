@@ -24,12 +24,9 @@ func NewRefreshTokenRepository(queries *db.Queries, db *pgxpool.Pool) *RefreshTo
 
 func (r *RefreshTokenRepository) Create(ctx context.Context, userID int32, token string, expiresAt time.Time) error {
 	params := db.CreateRefreshTokenParams{
-		UserID: userID,
-		Token:  token,
-		ExpiresAt: pgtype.Timestamp{
-			Time:  expiresAt,
-			Valid: true,
-		},
+		UserID:  userID,
+		Token:   token,
+		Column3: pgtype.Timestamptz{Time: expiresAt, Valid: true},
 	}
 	_, err := r.queries.CreateRefreshToken(ctx, params)
 	return err

@@ -1,8 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Backend API with Fiber",
+        "title": "Backend API",
+        "contact": {},
+        "version": "1.0"
     },
+    "host": "localhost:8386",
+    "basePath": "/api/v1",
     "paths": {
         "/auth/login": {
             "post": {
@@ -70,7 +75,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateUserRequest"
+                            "$ref": "#/definitions/internal_interfaces_http_handlers.CreateUserRequest"
                         }
                     }
                 ],
@@ -184,7 +189,23 @@
         }
     },
     "definitions": {
-        "handlers.CreateUserRequest": {
+        "handlers.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "internal_interfaces_http_handlers.CreateUserRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -204,22 +225,6 @@
                     "type": "string",
                     "minLength": 6,
                     "example": "secret123"
-                }
-            }
-        },
-        "handlers.LoginRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
                 }
             }
         },
@@ -248,7 +253,10 @@
         "models.LoginResponseSwagger": {
             "type": "object",
             "properties": {
-                "token": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
                     "type": "string"
                 },
                 "user": {

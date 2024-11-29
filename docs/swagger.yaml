@@ -1,5 +1,17 @@
+basePath: /api/v1
 definitions:
-  handlers.CreateUserRequest:
+  handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_interfaces_http_handlers.CreateUserRequest:
     properties:
       email:
         example: john@example.com
@@ -14,17 +26,6 @@ definitions:
     required:
     - email
     - name
-    - password
-    type: object
-  handlers.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        minLength: 6
-        type: string
-    required:
-    - email
     - password
     type: object
   models.ErrorResponse:
@@ -43,7 +44,9 @@ definitions:
     type: object
   models.LoginResponseSwagger:
     properties:
-      token:
+      access_token:
+        type: string
+      refresh_token:
         type: string
       user:
         $ref: '#/definitions/models.UserResponse'
@@ -61,8 +64,12 @@ definitions:
       updated_at:
         type: string
     type: object
+host: localhost:8386
 info:
   contact: {}
+  description: Backend API with Fiber
+  title: Backend API
+  version: "1.0"
 paths:
   /auth/login:
     post:
@@ -105,7 +112,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateUserRequest'
+          $ref: '#/definitions/internal_interfaces_http_handlers.CreateUserRequest'
       produces:
       - application/json
       responses:
