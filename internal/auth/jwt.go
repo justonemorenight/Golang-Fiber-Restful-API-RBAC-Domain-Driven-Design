@@ -1,9 +1,10 @@
 package auth
 
 import (
+	"strings"
 	"time"
 
-	"backend-fiber/internal/config"
+	"backend-fiber/internal/pkg/config"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -62,4 +63,25 @@ func GenerateRefreshToken(userID int32, email string) (string, error) {
 
 func GetJWTConfig() *JWTConfig {
 	return jwtConfig
+}
+
+func ExtractBearerToken(auth string) string {
+	if auth == "" {
+		return ""
+	}
+	parts := strings.Split(auth, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return ""
+	}
+	return parts[1]
+}
+
+func ValidateToken(token string, secret string) (*Claims, error) {
+	// TODO: implement JWT validation
+	return &Claims{}, nil
+}
+
+type Claims struct {
+	UserID int32
+	Email  string
 }

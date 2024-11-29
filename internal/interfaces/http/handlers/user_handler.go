@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	apperrors "backend-fiber/internal/errors"
-	"backend-fiber/internal/services"
+	"backend-fiber/internal/application/user"
+	customerrors "backend-fiber/internal/pkg/errors"
 	"errors"
 	"fmt"
 
@@ -11,12 +11,12 @@ import (
 )
 
 type UserHandler struct {
-	service *services.UserService
+	service *user.Service
 }
 
 var validate = validator.New()
 
-func NewUserHandler(service *services.UserService) *UserHandler {
+func NewUserHandler(service *user.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
@@ -108,8 +108,8 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 
 	user, err := h.service.GetUserByID(c.Context(), int32(id))
 	if err != nil {
-		if errors.Is(err, apperrors.ErrNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(apperrors.NewAppError(
+		if errors.Is(err, customerrors.ErrNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(customerrors.NewAppError(
 				fiber.StatusNotFound,
 				"User not found",
 				fmt.Sprintf("User with ID %d not found", id),

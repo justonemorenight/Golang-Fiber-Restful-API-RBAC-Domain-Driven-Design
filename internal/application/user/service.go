@@ -1,9 +1,9 @@
-package services
+package user
 
 import (
 	"backend-fiber/internal/db"
 	apperrors "backend-fiber/internal/errors"
-	"backend-fiber/internal/repository"
+	postgres "backend-fiber/internal/infrastructure/persistence/postgres"
 	"context"
 	"database/sql"
 	"errors"
@@ -11,24 +11,25 @@ import (
 	"time"
 
 	"backend-fiber/internal/auth"
+	"backend-fiber/internal/domain/user"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
-	userRepo         *repository.UserRepository
-	refreshTokenRepo *repository.RefreshTokenRepository
+type Service struct {
+	userRepo         user.UserRepository
+	refreshTokenRepo *postgres.RefreshTokenRepository
 }
 
-func NewUserService(userRepo *repository.UserRepository, refreshTokenRepo *repository.RefreshTokenRepository) *UserService {
-	return &UserService{
+func NewService(userRepo user.UserRepository, refreshTokenRepo *postgres.RefreshTokenRepository) *Service {
+	return &Service{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
 	}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, name, email, password string) (*db.User, error) {
+func (s *Service) CreateUser(ctx context.Context, name, email, password string) (*db.User, error) {
 	if name == "" || email == "" {
 		return nil, apperrors.ErrValidation
 	}
@@ -71,11 +72,11 @@ func (s *UserService) CreateUser(ctx context.Context, name, email, password stri
 	return &user, nil
 }
 
-func (s *UserService) GetUsers(ctx context.Context) ([]db.User, error) {
+func (s *Service) GetUsers(ctx context.Context) ([]db.User, error) {
 	return s.userRepo.GetAll(ctx)
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id int32) (*db.User, error) {
+func (s *Service) GetUserByID(ctx context.Context, id int32) (*db.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -86,7 +87,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id int32) (*db.User, erro
 	return &user, nil
 }
 
-func (s *UserService) Login(ctx context.Context, email, password string, ip string, userAgent string) (*db.User, string, string, error) {
+func (s *Service) Login(ctx context.Context, email, password string, ip string, userAgent string) (*db.User, string, string, error) {
 	// Tìm user theo email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
@@ -143,7 +144,7 @@ func (s *UserService) Login(ctx context.Context, email, password string, ip stri
 	return &user, accessToken, refreshToken, nil
 }
 
-func (s *UserService) ValidateRefreshToken(ctx context.Context, token string, ip string, userAgent string) error {
+func (s *Service) ValidateRefreshToken(ctx context.Context, token string, ip string, userAgent string) error {
 	// Lấy token từ database
 	refreshToken, err := s.refreshTokenRepo.Get(ctx, token)
 	if err != nil {

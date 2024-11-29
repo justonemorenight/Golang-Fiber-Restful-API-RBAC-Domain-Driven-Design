@@ -1,13 +1,13 @@
 package main
 
 import (
+	user "backend-fiber/internal/application/user"
 	"backend-fiber/internal/auth"
-	"backend-fiber/internal/config"
 	sqlcdb "backend-fiber/internal/db"
-	"backend-fiber/internal/handlers"
-	"backend-fiber/internal/middleware"
-	"backend-fiber/internal/repository"
-	"backend-fiber/internal/services"
+	repository "backend-fiber/internal/infrastructure/persistence/postgres"
+	"backend-fiber/internal/interfaces/http/handlers"
+	"backend-fiber/internal/interfaces/http/middleware"
+	"backend-fiber/internal/pkg/config"
 	"context"
 	"database/sql"
 	"fmt"
@@ -70,7 +70,7 @@ func main() {
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(queries)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(queries, dbpool)
-	userService := services.NewUserService(userRepo, refreshTokenRepo)
+	userService := user.NewService(userRepo, refreshTokenRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
 	app := fiber.New(fiber.Config{

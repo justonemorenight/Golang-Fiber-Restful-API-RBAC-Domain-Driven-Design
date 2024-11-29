@@ -1,17 +1,17 @@
 package handlers
 
 import (
-	"backend-fiber/internal/db"
-	"backend-fiber/internal/services"
+	appuser "backend-fiber/internal/application/user"
+	domainuser "backend-fiber/internal/domain/user"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthHandler struct {
-	userService *services.UserService
+	userService *appuser.Service
 }
 
-func NewAuthHandler(userService *services.UserService) *AuthHandler {
+func NewAuthHandler(userService *appuser.Service) *AuthHandler {
 	return &AuthHandler{userService: userService}
 }
 
@@ -21,9 +21,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string   `json:"access_token"`
-	RefreshToken string   `json:"refresh_token"`
-	User         *db.User `json:"user"`
+	AccessToken  string           `json:"access_token"`
+	RefreshToken string           `json:"refresh_token"`
+	User         *domainuser.User `json:"user"`
 }
 
 // Login godoc
@@ -53,14 +53,16 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	ip := c.IP()
 	userAgent := c.Get("User-Agent")
 
-	user, accessToken, refreshToken, err := h.userService.Login(c.Context(), req.Email, req.Password, ip, userAgent)
+	dbUser, accessToken, refreshToken, err := h.userService.Login(c.Context(), req.Email, req.Password, ip, userAgent)
 	if err != nil {
 		return err
 	}
 
+	domainUser := domainuser.FromDB(dbUser)
+
 	return c.JSON(LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         user,
+		User:         domainUser,
 	})
 }
