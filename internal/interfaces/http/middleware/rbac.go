@@ -20,7 +20,7 @@ func (m *RBACMiddleware) RequirePermission(permission string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id").(int32)
 
-		if permission == "users.read_self" {
+		if permission == "users.read_self" && c.Path() != "/api/v1/users/profile" {
 			paramID, err := c.ParamsInt("id")
 			if err != nil {
 				return fiber.ErrBadRequest

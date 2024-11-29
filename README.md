@@ -27,7 +27,8 @@ go mod download
 ```bash
 cp .env.example .env
 ```
-swag init -g cmd/api/main.go
+cd cmd/api
+swag init -g main.go --output ../../docs
 
 ## Chạy ứng dụng
 ### Môi trường Development

@@ -1,0 +1,24 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Sử dụng .exe trực tiếp cho Windows
+  cmd = "go build -o ./tmp/main.exe ./cmd/api/main.go"
+  # Sử dụng điều kiện OS để xác định bin
+  bin = "./tmp/main.exe"
+  delay = 1000
+  exclude_dir = ["assets", "tmp", "vendor"]
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  exclude_regex = ["_test\\.go"]
+
+[log]
+  time = true
+
+[color]
+  main = "yellow"
+  watcher = "cyan"
+  build = "green"
+  runner = "magenta"
+
+[screen]
+  clear_on_rebuild = true

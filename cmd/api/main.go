@@ -28,6 +28,10 @@ import (
 // @description Backend API with Fiber
 // @host localhost:8386
 // @BasePath /api/v1
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// Load config
@@ -112,6 +116,9 @@ func main() {
 
 	// Thêm route cho swagger
 	app.Get("/swagger/*", swagger.HandlerDefault)
+
+	// Thêm route mới vào group users đã được bảo vệ bởi middleware auth
+	users.Get("/profile", rbacMiddleware.RequirePermission("users.read_self"), userHandler.GetProfile)
 
 	log.Fatal(app.Listen(":8386"))
 }

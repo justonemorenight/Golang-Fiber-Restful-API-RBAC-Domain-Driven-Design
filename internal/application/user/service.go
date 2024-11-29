@@ -197,3 +197,17 @@ func (s *Service) ValidateRefreshToken(ctx context.Context, token string, ip str
 
 	return nil
 }
+
+func (s *Service) GetProfile(ctx context.Context, userID int32) (*db.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, apperrors.ErrDatabaseOperation
+	}
+
+	// Xóa password trước khi trả về
+	user.Password = ""
+	return &user, nil
+}

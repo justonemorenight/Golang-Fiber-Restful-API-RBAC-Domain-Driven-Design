@@ -1,5 +1,12 @@
 basePath: /api/v1
 definitions:
+  handlers.ErrorResponse:
+    properties:
+      errors:
+        type: string
+      message:
+        type: string
+    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -10,6 +17,28 @@ definitions:
     required:
     - email
     - password
+    type: object
+  handlers.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/models.UserResponse'
+    type: object
+  handlers.SwaggerUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
     type: object
   internal_interfaces_http_handlers.CreateUserRequest:
     properties:
@@ -42,15 +71,6 @@ definitions:
       success:
         type: boolean
     type: object
-  models.LoginResponseSwagger:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-      user:
-        $ref: '#/definitions/models.UserResponse'
-    type: object
   models.UserResponse:
     properties:
       created_at:
@@ -75,11 +95,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT token
+      description: Login for existing user
       parameters:
       - description: Login credentials
         in: body
-        name: credentials
+        name: request
         required: true
         schema:
           $ref: '#/definitions/handlers.LoginRequest'
@@ -89,25 +109,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.LoginResponseSwagger'
+            $ref: '#/definitions/handlers.LoginResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      summary: User login
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Login user
       tags:
       - auth
   /register:
     post:
       consumes:
       - application/json
-      description: Register a new user in the system
+      description: Create a new user in the system
       parameters:
-      - description: User information
+      - description: User info
         in: body
         name: user
         required: true
@@ -119,15 +139,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.UserResponse'
+            $ref: '#/definitions/handlers.SwaggerUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Create a new user
       tags:
       - users
@@ -135,7 +151,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all users from the system
+      description: Get all users in the system
       produces:
       - application/json
       responses:
@@ -143,14 +159,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.UserResponse'
+              $ref: '#/definitions/handlers.SwaggerUserResponse'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Get all users
       tags:
       - users
@@ -158,7 +176,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get user information by user ID
+      description: Get user information by ID
       parameters:
       - description: User ID
         in: path
@@ -171,18 +189,47 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserResponse'
+            $ref: '#/definitions/handlers.SwaggerUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get user by ID
+      tags:
+      - users
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Get user by ID
+      summary: Get user profile
       tags:
       - users
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

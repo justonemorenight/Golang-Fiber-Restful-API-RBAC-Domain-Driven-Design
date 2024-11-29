@@ -2,7 +2,7 @@ package handlers
 
 import (
 	appuser "backend-fiber/internal/application/user"
-	domainuser "backend-fiber/internal/domain/user"
+	models "backend-fiber/internal/models"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,32 +21,39 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string           `json:"access_token"`
-	RefreshToken string           `json:"refresh_token"`
-	User         *domainuser.User `json:"user"`
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	User         models.UserResponse `json:"user"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+	Errors  string `json:"errors,omitempty"`
 }
 
 // Login godoc
-// @Summary User login
-// @Description Authenticate user and return JWT token
+// @Summary Login user
+// @Description Login for existing user
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param credentials body LoginRequest true "Login credentials"
-// @Success 200 {object} models.LoginResponseSwagger
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 401 {object} models.ErrorResponse
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	req := new(LoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Message: "Invalid request body",
+		})
 	}
 
 	if err := validate.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Validation error",
-			"errors":  err.Error(),
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Message: "Validation error",
+			Errors:  err.Error(),
 		})
 	}
 
@@ -58,11 +65,17 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	domainUser := domainuser.FromDB(dbUser)
+	userResponse := models.UserResponse{
+		ID:        dbUser.ID,
+		Name:      dbUser.Name,
+		Email:     dbUser.Email,
+		CreatedAt: dbUser.CreatedAt.Time,
+		UpdatedAt: dbUser.UpdatedAt.Time,
+	}
 
 	return c.JSON(LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         domainUser,
+		User:         userResponse,
 	})
 }
