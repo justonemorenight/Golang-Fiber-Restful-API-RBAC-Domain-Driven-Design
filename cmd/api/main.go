@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "backend-fiber/docs"
+	_ "backend-fiber/cmd/api/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
@@ -23,9 +23,9 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-// @title Backend API
+// @title Backend Fiber API
 // @version 1.0
-// @description Backend API with Fiber
+// @description This is a sample server for Backend Fiber.
 // @host localhost:8386
 // @BasePath /api/v1
 // @securityDefinitions.apikey ApiKeyAuth
@@ -81,7 +81,15 @@ func main() {
 	userRepo := repository.NewUserRepository(queries)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(queries, dbpool)
 	userService := user.NewService(userRepo, refreshTokenRepo, queries)
+	rbacService := rbac.NewService(queries)
+
+	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService)
+	roleHandler := handlers.NewRoleHandler(rbacService)
+
+	// Initialize RBAC middleware
+	rbacMiddleware := middleware.NewRBACMiddleware(rbacService)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler,
@@ -91,17 +99,10 @@ func main() {
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
-	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService)
-
 	// Public routes
 	v1.Post("/register", userHandler.CreateUser)
 	auth := v1.Group("/auth")
 	auth.Post("/login", authHandler.Login)
-
-	// Initialize RBAC service
-	rbacService := rbac.NewService(queries)
-	rbacMiddleware := middleware.NewRBACMiddleware(rbacService)
 
 	// Protected routes with RBAC
 	users := v1.Group("/users")
@@ -113,6 +114,27 @@ func main() {
 
 	// Route for both admin and member
 	users.Get("/:id", rbacMiddleware.RequirePermission("users.read_self"), userHandler.GetUserByID)
+
+	// Role routes with RBAC
+	roles := v1.Group("/roles")
+	roles.Use(middleware.Protected())
+
+	// Basic CRUD operations
+	roles.Post("/", rbacMiddleware.RequirePermission("roles.create"), roleHandler.CreateRole)
+	roles.Get("/", rbacMiddleware.RequirePermission("roles.list"), roleHandler.ListRoles)
+	roles.Get("/:id", rbacMiddleware.RequirePermission("roles.read"), roleHandler.GetRole)
+	roles.Put("/:id", rbacMiddleware.RequirePermission("roles.update"), roleHandler.UpdateRole)
+	roles.Delete("/:id", rbacMiddleware.RequirePermission("roles.delete"), roleHandler.DeleteRole)
+
+	// Permission management
+	roles.Post("/:id/permissions", rbacMiddleware.RequirePermission("roles.assign_permission"), roleHandler.AssignPermission)
+	roles.Delete("/:id/permissions/:permissionId", rbacMiddleware.RequirePermission("roles.remove_permission"), roleHandler.RemovePermission)
+	roles.Get("/:id/permissions", rbacMiddleware.RequirePermission("roles.view_permissions"), roleHandler.ListRolePermissions)
+
+	// User management
+	roles.Post("/:id/users", rbacMiddleware.RequirePermission("roles.assign_user"), roleHandler.AssignUser)
+	roles.Delete("/:id/users/:userId", rbacMiddleware.RequirePermission("roles.remove_user"), roleHandler.RemoveUser)
+	roles.Get("/:id/users", rbacMiddleware.RequirePermission("roles.view_users"), roleHandler.ListRoleUsers)
 
 	// Add route for swagger
 	app.Get("/swagger/*", swagger.HandlerDefault)

@@ -22,6 +22,10 @@ func Protected() fiber.Handler {
 			return apperrors.ErrUnauthorized
 		}
 
+		if claims == nil {
+			return apperrors.ErrUnauthorized
+		}
+
 		c.Locals("user_id", claims.UserID)
 		c.Locals("email", claims.Email)
 

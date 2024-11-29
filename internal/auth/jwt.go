@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -76,9 +78,23 @@ func ExtractBearerToken(auth string) string {
 	return parts[1]
 }
 
-func ValidateToken(token string, secret string) (*Claims, error) {
-	// TODO: implement JWT validation
-	return &Claims{}, nil
+func ValidateToken(token string, secret string) (*JWTClaims, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := parsedToken.Claims.(*JWTClaims); ok && parsedToken.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token claims")
 }
 
 type Claims struct {

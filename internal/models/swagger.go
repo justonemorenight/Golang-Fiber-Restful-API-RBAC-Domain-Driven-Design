@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-// UserResponse is used for Swagger documentation
-type UserResponse struct {
+// User related
+type SwaggerUserResponse struct {
 	ID        int32     `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
@@ -11,30 +11,67 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// LoginResponseSwagger is used for Swagger documentation
-type LoginResponseSwagger struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	User         UserResponse `json:"user"`
+type SwaggerLoginResponse struct {
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	User         SwaggerUserResponse `json:"user"`
 }
 
-// ErrorResponse is used for Swagger documentation
+// Role related
+type SwaggerRoleResponse struct {
+	ID          int32     `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type SwaggerCreateRoleRequest struct {
+	Name        string `json:"name" validate:"required" example:"admin"`
+	Description string `json:"description" example:"Administrator role"`
+}
+
+type SwaggerUpdateRoleRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// Common response wrapper for all API endpoints
+type SwaggerResponse struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   *ErrorData  `json:"error,omitempty"`
+}
+
+// Error data structure
+type ErrorData struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Detail  string `json:"detail,omitempty"`
+}
+
+// ErrorResponse represents the error response structure
 type ErrorResponse struct {
-	Success bool `json:"success"`
-	Error   struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-		Detail  string `json:"detail,omitempty"`
-	} `json:"error"`
+	Success bool      `json:"success"`
+	Error   ErrorData `json:"error"`
 }
 
-// RefreshTokenRequest is used for Swagger documentation
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+// Common success response helper
+func NewSuccessResponse(data interface{}) *SwaggerResponse {
+	return &SwaggerResponse{
+		Success: true,
+		Data:    data,
+	}
 }
 
-// RefreshTokenResponse is used for Swagger documentation
-type RefreshTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+// Common error response helper
+func NewErrorResponse(code int, message string, detail string) *SwaggerResponse {
+	return &SwaggerResponse{
+		Success: false,
+		Error: &ErrorData{
+			Code:    code,
+			Message: message,
+			Detail:  detail,
+		},
+	}
 }

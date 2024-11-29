@@ -32,7 +32,7 @@ cp .env.example .env
 
 ```bash
 cd cmd/api
-swag init -g main.go --output ../../docs
+swag init -g main.go --parseDependency --parseInternal -o docs
 ```
 
 ## Run application

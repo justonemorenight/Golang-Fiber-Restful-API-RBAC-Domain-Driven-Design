@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend-fiber/internal/application/user"
+	models "backend-fiber/internal/models"
 	customerrors "backend-fiber/internal/pkg/errors"
 	"errors"
 	"fmt"
@@ -17,6 +18,14 @@ type UserHandler struct {
 
 var validate = validator.New()
 
+type SwaggerUserResponse struct {
+	ID        int32     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 func NewUserHandler(service *user.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
@@ -28,24 +37,15 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min=6" example:"secret123"`
 }
 
-// UserResponse represents the user response for swagger documentation
-type SwaggerUserResponse struct {
-	ID        int32     `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 // CreateUser godoc
 // @Summary Create a new user
 // @Description Create a new user in the system
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body CreateUserRequest true "User info"
-// @Success 201 {object} SwaggerUserResponse
-// @Failure 400 {object} ErrorResponse
+// @Param request body CreateUserRequest true "Create user request"
+// @Success 201 {object} models.SwaggerResponse{data=models.SwaggerUserResponse}
+// @Failure 400 {object} models.SwaggerResponse{error=models.ErrorData}
 // @Router /register [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	req := new(CreateUserRequest)
@@ -158,19 +158,33 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Failure 403 {object} models.ErrorResponse
 // @Router /users/profile [get]
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int32)
+	// Get user_id from context set by auth middleware
+	userID, ok := c.Locals("user_id").(int32)
+	if !ok {
+		if floatID, ok := c.Locals("user_id").(float64); ok {
+			userID = int32(floatID)
+		} else {
+			return customerrors.NewAppError(
+				fiber.StatusUnauthorized,
+				"Unauthorized",
+				"Invalid or missing user ID in token",
+			)
+		}
+	}
 
-	dbUser, err := h.service.GetUserByID(c.Context(), userID)
+	// Use GetProfile instead of GetUserByID
+	dbUser, err := h.service.GetProfile(c.Context(), userID)
 	if err != nil {
 		return err
 	}
 
-	response := SwaggerUserResponse{
+	response := models.UserResponse{
 		ID:        dbUser.ID,
 		Name:      dbUser.Name,
 		Email:     dbUser.Email,
 		CreatedAt: dbUser.CreatedAt.Time,
 		UpdatedAt: dbUser.UpdatedAt.Time,
 	}
+
 	return c.JSON(response)
 }

@@ -38,23 +38,26 @@ type ErrorResponse struct {
 // @Accept json
 // @Produce json
 // @Param request body LoginRequest true "Login credentials"
-// @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
+// @Success 200 {object} models.SwaggerResponse{data=models.SwaggerLoginResponse} "Success"
+// @Failure 400 {object} models.SwaggerResponse{error=models.ErrorData} "Bad Request"
+// @Failure 401 {object} models.SwaggerResponse{error=models.ErrorData} "Unauthorized"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	req := new(LoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
-			Message: "Invalid request body",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(models.NewErrorResponse(
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			"",
+		))
 	}
 
 	if err := validate.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
-			Message: "Validation error",
-			Errors:  err.Error(),
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(models.NewErrorResponse(
+			fiber.StatusBadRequest,
+			"Validation error",
+			err.Error(),
+		))
 	}
 
 	ip := c.IP()
@@ -65,7 +68,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	userResponse := models.UserResponse{
+	userResponse := models.SwaggerUserResponse{
 		ID:        dbUser.ID,
 		Name:      dbUser.Name,
 		Email:     dbUser.Email,
@@ -73,9 +76,11 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		UpdatedAt: dbUser.UpdatedAt.Time,
 	}
 
-	return c.JSON(LoginResponse{
+	loginResponse := models.SwaggerLoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User:         userResponse,
-	})
+	}
+
+	return c.JSON(models.NewSuccessResponse(loginResponse))
 }

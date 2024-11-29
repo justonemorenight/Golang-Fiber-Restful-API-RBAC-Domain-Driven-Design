@@ -1,0 +1,707 @@
+basePath: /api/v1
+definitions:
+  backend-fiber_internal_db.Permission:
+    properties:
+      action:
+        type: string
+      description:
+        $ref: '#/definitions/pgtype.Text'
+      id:
+        type: integer
+      name:
+        type: string
+      resource:
+        type: string
+    type: object
+  backend-fiber_internal_db.Role:
+    properties:
+      description:
+        $ref: '#/definitions/pgtype.Text'
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  backend-fiber_internal_db.User:
+    properties:
+      created_at:
+        $ref: '#/definitions/pgtype.Timestamptz'
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      password:
+        type: string
+      updated_at:
+        $ref: '#/definitions/pgtype.Timestamptz'
+    type: object
+  backend-fiber_internal_models.ErrorData:
+    properties:
+      code:
+        type: integer
+      detail:
+        type: string
+      message:
+        type: string
+    type: object
+  backend-fiber_internal_models.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+      success:
+        type: boolean
+    type: object
+  backend-fiber_internal_models.RoleResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  backend-fiber_internal_models.SwaggerCreateRoleRequest:
+    properties:
+      description:
+        example: Administrator role
+        type: string
+      name:
+        example: admin
+        type: string
+    required:
+    - name
+    type: object
+  backend-fiber_internal_models.SwaggerLoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/backend-fiber_internal_models.SwaggerUserResponse'
+    type: object
+  backend-fiber_internal_models.SwaggerResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+      success:
+        type: boolean
+    type: object
+  backend-fiber_internal_models.SwaggerRoleResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  backend-fiber_internal_models.SwaggerUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  backend-fiber_internal_models.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handlers.AssignPermissionRequest:
+    properties:
+      permission_id:
+        type: integer
+    type: object
+  internal_interfaces_http_handlers.CreateUserRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: johndoe
+        type: string
+      password:
+        example: secret123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  internal_interfaces_http_handlers.ErrorResponse:
+    properties:
+      errors:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_interfaces_http_handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_interfaces_http_handlers.SwaggerUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handlers.UpdateRoleRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  pgtype.InfinityModifier:
+    enum:
+    - 1
+    - 0
+    - -1
+    type: integer
+    x-enum-varnames:
+    - Infinity
+    - Finite
+    - NegativeInfinity
+  pgtype.Text:
+    properties:
+      string:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  pgtype.Timestamptz:
+    properties:
+      infinityModifier:
+        $ref: '#/definitions/pgtype.InfinityModifier'
+      time:
+        type: string
+      valid:
+        type: boolean
+    type: object
+host: localhost:8386
+info:
+  contact: {}
+  description: This is a sample server for Backend Fiber.
+  title: Backend Fiber API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login for existing user
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/backend-fiber_internal_models.SwaggerLoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+              type: object
+      summary: Login user
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user in the system
+      parameters:
+      - description: Create user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handlers.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/backend-fiber_internal_models.SwaggerUserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+              type: object
+      summary: Create a new user
+      tags:
+      - users
+  /roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-fiber_internal_models.RoleResponse'
+            type: array
+      summary: List all roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role in the system
+      parameters:
+      - description: Create role request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-fiber_internal_models.SwaggerCreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/backend-fiber_internal_models.SwaggerRoleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/backend-fiber_internal_models.SwaggerResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/backend-fiber_internal_models.ErrorData'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new role
+      tags:
+      - roles
+  /roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role from the system
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      consumes:
+      - application/json
+      description: Get role information by ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.RoleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get role by ID
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update role information
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role info
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handlers.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_db.Role'
+      summary: Update role
+      tags:
+      - roles
+  /roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all permissions assigned to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-fiber_internal_db.Permission'
+            type: array
+      summary: List role permissions
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Assign a permission to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Permission info
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handlers.AssignPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Assign permission to role
+      tags:
+      - roles
+  /roles/{id}/permissions/{permissionId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a permission from a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Permission ID
+        in: path
+        name: permissionId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Remove permission from role
+      tags:
+      - roles
+  /roles/{id}/users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users assigned to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-fiber_internal_db.User'
+            type: array
+      summary: List role users
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Assign a user to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: body
+        name: userId
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User assigned to role successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Assign user to role
+      tags:
+      - roles
+  /roles/{id}/users/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a user from a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User removed from role successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove user from role
+      tags:
+      - roles
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_interfaces_http_handlers.SwaggerUserResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handlers.ErrorResponse'
+      summary: Get all users
+      tags:
+      - users
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get user information by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handlers.SwaggerUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handlers.ErrorResponse'
+      summary: Get user by ID
+      tags:
+      - users
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/backend-fiber_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user profile
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

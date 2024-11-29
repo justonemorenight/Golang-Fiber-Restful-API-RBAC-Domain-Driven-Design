@@ -22,11 +22,15 @@ type Querier interface {
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
 	GetRole(ctx context.Context, id int32) (Role, error)
 	GetRoleByName(ctx context.Context, name string) (Role, error)
+	GetRolePermissions(ctx context.Context, roleID int32) ([]Permission, error)
+	GetRoleUsers(ctx context.Context, roleID int32) ([]User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
 	GetUserPermissions(ctx context.Context, userID int32) ([]Permission, error)
 	GetUserRoles(ctx context.Context, userID int32) ([]Role, error)
 	ListRoles(ctx context.Context) ([]Role, error)
+	RemovePermissionFromRole(ctx context.Context, arg RemovePermissionFromRoleParams) error
+	RemoveUserFromRole(ctx context.Context, arg RemoveUserFromRoleParams) error
 	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error)
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 }
